@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 /**
  * Keeps track of today's appointments.
- * Handles bookings, checks for conflicts and finds existing appointments.
+ * Handles booking, searching, sorting and cancelling appointments.
  */
 public class AppointmentManager {
 
@@ -100,9 +100,82 @@ public class AppointmentManager {
             return;
         }
 
-        // At this stage, display the bookings in their current order.
+        // Display the list in the order provided by the caller.
         for (Appointment appointment : results) {
             System.out.println(appointment.getSummary());
         }
+    }
+
+    /** Gets all bookings in time order without changing the stored list. */
+    public ArrayList<Appointment> getSortedAppointments() {
+        return getSortedAppointments(getAllAppointments());
+    }
+
+    /** Sorts either a full list or a filtered list by appointment time. */
+    public ArrayList<Appointment> getSortedAppointments(ArrayList<Appointment> selected) {
+        ArrayList<Appointment> sorted = new ArrayList<Appointment>();
+        if (selected == null) {
+            System.out.println("WARNING: No appointment list was supplied.");
+            return sorted;
+        }
+
+        sorted.addAll(selected);
+        // Appointment.compareTo compares the starting times.
+        java.util.Collections.sort(sorted);
+        return sorted;
+    }
+
+    /** Cancels one booking using the professional ID and appointment time. */
+    public boolean cancelByProfessionalAndTime(int professionalId, String time) {
+        int minutes;
+        try {
+            minutes = ClinicSchedule.parseSlot(time);
+        } catch (IllegalArgumentException exception) {
+            System.out.println("WARNING: Cannot cancel appointment: " + exception.getMessage());
+            return false;
+        }
+
+        for (int i = 0; i < appointments.size(); i++) {
+            Appointment appointment = appointments.get(i);
+            if (appointment.getProfessional().getId() == professionalId
+                    && appointment.getTimeInMinutes() == minutes) {
+                appointments.remove(i);
+                System.out.println("SUCCESS: Cancelled " + appointment.getSummary());
+                return true;
+            }
+        }
+
+        System.out.println("WARNING: No appointment found for professional ID "
+                + professionalId + " at " + time + ".");
+        return false;
+    }
+
+    /** Cancels all bookings associated with a patient's mobile number. */
+    public boolean cancelByPatientPhone(String mobileNumber) {
+        if (mobileNumber == null || mobileNumber.trim().isEmpty()) {
+            System.out.println("WARNING: A patient phone number is required.");
+            return false;
+        }
+
+        String phone = mobileNumber.trim();
+        int removed = 0;
+
+        // Go backwards so removing a booking does not skip the next one.
+        for (int i = appointments.size() - 1; i >= 0; i--) {
+            Appointment appointment = appointments.get(i);
+            if (appointment.getPatient().getMobileNumber().equals(phone)) {
+                appointments.remove(i);
+                removed++;
+            }
+        }
+
+        if (removed == 0) {
+            System.out.println("WARNING: No appointment found for phone number " + phone + ".");
+            return false;
+        }
+
+        System.out.println("SUCCESS: Cancelled " + removed
+                + " appointment(s) for phone number " + phone + ".");
+        return true;
     }
 }
