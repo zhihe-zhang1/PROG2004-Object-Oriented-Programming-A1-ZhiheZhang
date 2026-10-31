@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 /**
  * Keeps track of today's appointments.
- * This first version adds bookings and checks for conflicts.
+ * Handles bookings, checks for conflicts and finds existing appointments.
  */
 public class AppointmentManager {
 
@@ -58,6 +58,51 @@ public class AppointmentManager {
         } catch (IllegalArgumentException exception) {
             System.out.println("WARNING: Cannot add appointment: " + exception.getMessage());
             return false;
+        }
+    }
+
+    /** Returns a new list so other code cannot change the stored bookings. */
+    public ArrayList<Appointment> getAllAppointments() {
+        return new ArrayList<Appointment>(appointments);
+    }
+
+    /** Finds all appointments for a particular health professional. */
+    public ArrayList<Appointment> getAppointmentsByProfessionalId(int professionalId) {
+        ArrayList<Appointment> matches = new ArrayList<Appointment>();
+        for (Appointment appointment : appointments) {
+            if (appointment.getProfessional().getId() == professionalId) {
+                matches.add(appointment);
+            }
+        }
+        return matches;
+    }
+
+    /** Finds appointments using the patient's mobile number. */
+    public ArrayList<Appointment> getAppointmentsByPatientPhone(String mobileNumber) {
+        ArrayList<Appointment> matches = new ArrayList<Appointment>();
+        if (mobileNumber == null || mobileNumber.trim().isEmpty()) {
+            return matches;
+        }
+
+        String phone = mobileNumber.trim();
+        for (Appointment appointment : appointments) {
+            if (appointment.getPatient().getMobileNumber().equals(phone)) {
+                matches.add(appointment);
+            }
+        }
+        return matches;
+    }
+
+    /** Prints all bookings in a list or a warning if there are none. */
+    public void displayAppointments(ArrayList<Appointment> results) {
+        if (results == null || results.isEmpty()) {
+            System.out.println("WARNING: No appointments found.");
+            return;
+        }
+
+        // At this stage, display the bookings in their current order.
+        for (Appointment appointment : results) {
+            System.out.println(appointment.getSummary());
         }
     }
 }
